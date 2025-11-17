@@ -7,7 +7,49 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #4caf50;
+            --error-color: #f44336;
+            --warning-color: #ff9800;
+            --bg-start: #667eea;
+            --bg-end: #764ba2;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --text-muted: #999;
+            --card-bg: white;
+            --card-secondary: #f8f9fa;
+            --border-color: #e0e0e0;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.3);
+            --transition-fast: 0.2s ease;
+            --transition-normal: 0.3s ease;
+            --transition-slow: 0.5s ease;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #8b9fea;
+            --secondary-color: #9370ba;
+            --success-color: #66bb6a;
+            --error-color: #ef5350;
+            --warning-color: #ffa726;
+            --bg-start: #1a1a2e;
+            --bg-end: #16213e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --text-muted: #808080;
+            --card-bg: #2d2d44;
+            --card-secondary: #252538;
+            --border-color: #3d3d5c;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -16,12 +58,13 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            transition: background var(--transition-slow);
         }
 
         #root {
@@ -30,12 +73,65 @@
         }
 
         .game-container {
-            background: white;
+            background: var(--card-bg);
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: var(--shadow-lg);
             padding: 40px;
-            animation: fadeIn 0.5s ease-in;
+            animation: fadeInScale 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             position: relative;
+            transition: background var(--transition-normal), box-shadow var(--transition-normal);
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 120px;
+            background: var(--card-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            font-size: 1.2em;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .theme-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .sound-toggle {
+            position: absolute;
+            top: 20px;
+            right: 200px;
+            background: var(--card-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            font-size: 1.2em;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sound-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-md);
+        }
+
+        .sound-toggle.disabled {
+            opacity: 0.5;
         }
 
         .logo-container {
@@ -44,6 +140,11 @@
             right: 20px;
             width: 80px;
             height: 80px;
+            transition: transform var(--transition-normal);
+        }
+
+        .logo-container:hover {
+            transform: rotate(360deg) scale(1.1);
         }
 
         .logo-container img {
@@ -57,27 +158,361 @@
             top: 20px;
             left: 20px;
             font-size: 0.85em;
-            color: #999;
+            color: var(--text-muted);
+            background: var(--card-secondary);
+            padding: 6px 12px;
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .back-to-start {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--card-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px 18px;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            font-size: 1em;
+            font-weight: bold;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .back-to-start:hover {
+            background: var(--error-color);
+            color: white;
+            border-color: var(--error-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .back-to-start:active {
+            transform: translateY(0);
+        }
+
+        .test-history {
+            background: var(--card-secondary);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border: 2px solid var(--border-color);
+        }
+
+        .test-history h3 {
+            color: var(--primary-color);
+            margin-bottom: 18px;
+            font-size: 1.3em;
+            text-align: center;
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .history-item {
+            background: var(--card-bg);
+            padding: 18px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            transition: all var(--transition-normal);
+        }
+
+        .history-item:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary-color);
+        }
+
+        .history-item .week-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .history-item .score-big {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 10px 0;
+        }
+
+        .history-item .date {
+            color: var(--text-muted);
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        .history-item .stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 12px;
+            font-size: 0.9em;
+        }
+
+        .history-item .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .clear-history {
+            background: var(--card-bg);
+            color: var(--error-color);
+            border: 2px solid var(--error-color);
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 15px;
+            transition: all var(--transition-normal);
+        }
+
+        .clear-history:hover {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .no-history {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 30px;
+            font-style: italic;
+        }
+
+        .glossary-toggle {
+            position: fixed;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 15px 0 0 15px;
+            padding: 20px 15px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+            transition: all var(--transition-normal);
+            z-index: 1000;
+        }
+
+        .glossary-toggle:hover {
+            right: 5px;
+            box-shadow: -8px 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .glossary-panel {
+            position: fixed;
+            top: 0;
+            right: -450px;
+            width: 450px;
+            height: 100vh;
+            background: var(--card-bg);
+            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.3);
+            transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 999;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .glossary-panel.open {
+            right: 0;
+        }
+
+        .glossary-panel h2 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .glossary-panel .subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+            font-size: 0.95em;
+        }
+
+        .glossary-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--card-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-normal);
+        }
+
+        .glossary-close:hover {
+            background: var(--error-color);
+            color: white;
+            border-color: var(--error-color);
+            transform: rotate(90deg);
+        }
+
+        .glossary-section {
+            margin-bottom: 30px;
+        }
+
+        .glossary-section h3 {
+            color: var(--primary-color);
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .glossary-term {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--card-secondary);
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
+            transition: all var(--transition-normal);
+        }
+
+        .glossary-term:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .glossary-term dt {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .glossary-term dd {
+            color: var(--text-primary);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .glossary-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all var(--transition-normal);
+            z-index: 998;
+        }
+
+        .glossary-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        @media (max-width: 768px) {
+            .glossary-panel {
+                width: 100%;
+                right: -100%;
+            }
+
+            .glossary-toggle {
+                font-size: 0.9em;
+                padding: 15px 10px;
+            }
+        }
+
+        .streak-badge {
+            position: absolute;
+            top: 70px;
+            left: 20px;
+            background: linear-gradient(135deg, var(--warning-color), #ff6b35);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-md);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .achievements-bar {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .achievement {
+            background: var(--card-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 15px;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            transition: all var(--transition-normal);
+        }
+
+        .achievement.unlocked {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-color: var(--primary-color);
+            animation: achievementUnlock 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes achievementUnlock {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
 
         .footer {
             margin-top: 30px;
             padding-top: 20px;
-            border-top: 2px solid #e0e0e0;
+            border-top: 2px solid var(--border-color);
             text-align: center;
             font-size: 0.9em;
-            color: #666;
+            color: var(--text-secondary);
         }
 
         .week-selector {
-            background: #f8f9fa;
+            background: var(--card-secondary);
             padding: 25px;
             border-radius: 15px;
             margin: 30px 0;
+            border: 2px solid var(--border-color);
         }
 
         .week-selector h3 {
-            color: #667eea;
+            color: var(--primary-color);
             margin-bottom: 15px;
             text-align: center;
         }
@@ -90,35 +525,280 @@
 
         .week-button {
             padding: 15px;
-            background: white;
-            border: 3px solid #e0e0e0;
+            background: var(--card-bg);
+            border: 3px solid var(--border-color);
             border-radius: 10px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all var(--transition-normal);
             font-size: 1em;
             font-weight: bold;
-            color: #333;
+            color: var(--text-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .week-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(102, 126, 234, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .week-button:hover:not(:disabled)::before {
+            width: 300px;
+            height: 300px;
         }
 
         .week-button:hover:not(:disabled) {
-            border-color: #667eea;
+            border-color: var(--primary-color);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .week-button:active:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
         }
 
         .week-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            background: #f5f5f5;
+            background: var(--card-secondary);
         }
 
         .week-button.selected {
-            background: #667eea;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
-            border-color: #667eea;
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-md);
         }
 
-        @keyframes fadeIn {
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(20deg); }
+        }
+
+        .header .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.2em;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 35px;
+            background: var(--card-secondary);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            border: 2px solid var(--border-color);
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            transition: width var(--transition-slow) cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .level-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            color: var(--primary-color);
+            font-weight: bold;
+            padding: 12px;
+            background: var(--card-secondary);
+            border-radius: 15px;
+            border: 2px solid var(--border-color);
+        }
+
+        .question-card {
+            background: var(--card-secondary);
+            padding: 35px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 2px solid var(--border-color);
+            transition: all var(--transition-normal);
+        }
+
+        .question-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .question-text {
+            font-size: 1.35em;
+            color: var(--text-primary);
+            margin-bottom: 25px;
+            line-height: 1.7;
+            font-weight: 500;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option-button {
+            background: var(--card-bg);
+            border: 3px solid var(--border-color);
+            padding: 22px;
+            border-radius: 12px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            text-align: left;
+            color: var(--text-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(102, 126, 234, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .option-button:hover:not(:disabled)::before {
+            width: 500px;
+            height: 500px;
+        }
+
+        .option-button:hover:not(:disabled) {
+            border-color: var(--primary-color);
+            transform: translateX(8px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .option-button:active:not(:disabled) {
+            transform: translateX(5px) scale(0.98);
+        }
+
+        .option-button:focus-visible {
+            outline: 3px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        .option-button.selected {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-md);
+            transform: translateX(5px);
+        }
+
+        .option-button.correct {
+            background: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+            animation: correctPulse 0.6s;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        .option-button.incorrect {
+            background: var(--error-color);
+            color: white;
+            border-color: var(--error-color);
+            animation: shake 0.5s;
+        }
+
+        .option-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        .feedback {
+            margin-top: 25px;
+            padding: 25px;
+            border-radius: 12px;
+            font-size: 1.1em;
+            animation: slideInUp 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            line-height: 1.6;
+        }
+
+        @keyframes slideInUp {
             from {
                 opacity: 0;
                 transform: translateY(20px);
@@ -129,183 +809,110 @@
             }
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            color: #667eea;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .header .subtitle {
-            color: #666;
-            font-size: 1.2em;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 30px;
-            background: #e0e0e0;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.5s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-        }
-
-        .level-indicator {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 1.2em;
-            color: #667eea;
-            font-weight: bold;
-        }
-
-        .question-card {
-            background: #f8f9fa;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-        }
-
-        .question-text {
-            font-size: 1.3em;
-            color: #333;
-            margin-bottom: 25px;
-            line-height: 1.6;
-        }
-
-        .options {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .option-button {
-            background: white;
-            border: 3px solid #e0e0e0;
-            padding: 20px;
-            border-radius: 10px;
-            font-size: 1.1em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: left;
-        }
-
-        .option-button:hover {
-            border-color: #667eea;
-            transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
-        }
-
-        .option-button.selected {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-
-        .option-button.correct {
-            background: #4caf50;
-            color: white;
-            border-color: #4caf50;
-        }
-
-        .option-button.incorrect {
-            background: #f44336;
-            color: white;
-            border-color: #f44336;
-        }
-
-        .option-button:disabled {
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        .feedback {
-            margin-top: 20px;
-            padding: 20px;
-            border-radius: 10px;
-            font-size: 1.1em;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
         .feedback.correct {
             background: #e8f5e9;
             color: #2e7d32;
-            border: 2px solid #4caf50;
+            border: 3px solid var(--success-color);
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+        }
+
+        [data-theme="dark"] .feedback.correct {
+            background: #1b5e20;
+            color: #a5d6a7;
         }
 
         .feedback.incorrect {
             background: #ffebee;
             color: #c62828;
-            border: 2px solid #f44336;
+            border: 3px solid var(--error-color);
+            box-shadow: 0 0 20px rgba(244, 67, 54, 0.3);
+        }
+
+        [data-theme="dark"] .feedback.incorrect {
+            background: #b71c1c;
+            color: #ef9a9a;
         }
 
         .action-buttons {
             display: flex;
             gap: 15px;
             justify-content: center;
-            margin-top: 20px;
+            margin-top: 25px;
+            flex-wrap: wrap;
         }
 
         .btn {
-            padding: 15px 30px;
-            font-size: 1.1em;
+            padding: 16px 35px;
+            font-size: 1.15em;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: pointer;
             font-weight: bold;
-            transition: all 0.3s ease;
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::after {
+            width: 300px;
+            height: 300px;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:focus-visible {
+            outline: 3px solid var(--primary-color);
+            outline-offset: 3px;
         }
 
         .btn-secondary {
-            background: #e0e0e0;
-            color: #333;
+            background: var(--card-secondary);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
         }
 
         .btn-secondary:hover {
-            background: #d0d0d0;
+            background: var(--border-color);
+            transform: translateY(-2px);
         }
 
         .score-display {
             text-align: center;
-            font-size: 1.5em;
+            font-size: 1.6em;
             margin: 20px 0;
-            color: #667eea;
+            color: var(--primary-color);
             font-weight: bold;
+            background: var(--card-secondary);
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px solid var(--border-color);
+            animation: fadeInScale 0.5s;
         }
 
         .start-screen, .end-screen {
@@ -313,44 +920,61 @@
         }
 
         .start-screen h2, .end-screen h2 {
-            color: #667eea;
-            font-size: 2em;
+            color: var(--primary-color);
+            font-size: 2.2em;
             margin-bottom: 20px;
         }
 
         .start-screen p, .end-screen p {
             font-size: 1.2em;
-            color: #666;
+            color: var(--text-secondary);
             margin-bottom: 30px;
             line-height: 1.8;
         }
 
         .level-list {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
+            background: var(--card-secondary);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
             text-align: left;
+            border: 2px solid var(--border-color);
         }
 
         .level-list h3 {
-            color: #667eea;
-            margin-bottom: 15px;
+            color: var(--primary-color);
+            margin-bottom: 18px;
+            font-size: 1.3em;
         }
 
         .level-list ul {
             list-style-position: inside;
-            color: #333;
+            color: var(--text-primary);
             font-size: 1.1em;
         }
 
         .level-list li {
-            padding: 8px 0;
+            padding: 10px 0;
+            transition: all var(--transition-fast);
+            border-radius: 8px;
+            padding-left: 10px;
+        }
+
+        .level-list li:hover {
+            background: var(--card-bg);
+            transform: translateX(5px);
         }
 
         .emoji {
-            font-size: 3em;
-            margin: 20px 0;
+            font-size: 4em;
+            margin: 25px 0;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-20px); }
+            60% { transform: translateY(-10px); }
         }
 
         .drag-drop-area {
@@ -361,58 +985,70 @@
         }
 
         .drop-zone {
-            background: white;
-            border: 3px dashed #ccc;
-            border-radius: 10px;
+            background: var(--card-bg);
+            border: 3px dashed var(--border-color);
+            border-radius: 12px;
             padding: 20px;
             min-height: 150px;
+            transition: all var(--transition-normal);
         }
 
         .drop-zone.active {
-            border-color: #667eea;
-            background: #f0f4ff;
+            border-color: var(--primary-color);
+            background: rgba(102, 126, 234, 0.05);
+            transform: scale(1.02);
         }
 
         .drop-zone h4 {
-            color: #667eea;
+            color: var(--primary-color);
             margin-bottom: 15px;
             text-align: center;
+            font-size: 1.1em;
         }
 
         .draggable-item {
-            background: #667eea;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 8px;
+            padding: 14px;
+            margin: 10px 0;
+            border-radius: 10px;
             cursor: move;
-            transition: all 0.3s ease;
+            transition: all var(--transition-normal);
+            box-shadow: var(--shadow-sm);
+            user-select: none;
         }
 
         .draggable-item:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            transform: scale(1.05) rotate(2deg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .draggable-item:active {
+            cursor: grabbing;
+            transform: scale(1.1) rotate(5deg);
         }
 
         .items-pool {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
+            background: var(--card-secondary);
+            padding: 25px;
+            border-radius: 12px;
             margin-bottom: 20px;
+            border: 2px solid var(--border-color);
         }
 
         .items-pool h4 {
-            color: #333;
-            margin-bottom: 15px;
+            color: var(--text-primary);
+            margin-bottom: 18px;
+            font-size: 1.1em;
         }
 
         @media (max-width: 768px) {
             .game-container {
-                padding: 20px;
+                padding: 25px;
             }
 
             .header h1 {
-                font-size: 1.8em;
+                font-size: 2em;
             }
 
             .drag-drop-area {
@@ -431,6 +1067,75 @@
                 left: 10px;
                 font-size: 0.75em;
             }
+
+            .theme-toggle, .sound-toggle {
+                top: 80px;
+                right: 10px;
+                font-size: 1em;
+                padding: 6px 12px;
+            }
+
+            .sound-toggle {
+                right: 80px;
+            }
+
+            .streak-badge {
+                top: 120px;
+                left: 10px;
+                font-size: 0.9em;
+                padding: 8px 12px;
+            }
+
+            .question-card {
+                padding: 25px;
+            }
+
+            .question-text {
+                font-size: 1.2em;
+            }
+
+            .option-button {
+                padding: 18px;
+                font-size: 1em;
+            }
+
+            .btn {
+                padding: 14px 25px;
+                font-size: 1em;
+            }
+        }
+
+        /* Accessibility improvements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        *:focus-visible {
+            outline: 3px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        /* Loading animation */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
         }
     </style>
 </head>
@@ -438,12 +1143,188 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
+
+        // Sound effects using Web Audio API
+        const SoundManager = {
+            context: null,
+            enabled: true,
+
+            init() {
+                this.context = new (window.AudioContext || window.webkitAudioContext)();
+            },
+
+            playTone(frequency, duration, type = 'sine') {
+                if (!this.enabled || !this.context) return;
+
+                const oscillator = this.context.createOscillator();
+                const gainNode = this.context.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(this.context.destination);
+
+                oscillator.frequency.value = frequency;
+                oscillator.type = type;
+
+                gainNode.gain.setValueAtTime(0.3, this.context.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + duration);
+
+                oscillator.start(this.context.currentTime);
+                oscillator.stop(this.context.currentTime + duration);
+            },
+
+            playCorrect() {
+                this.playTone(523.25, 0.1); // C5
+                setTimeout(() => this.playTone(659.25, 0.15), 100); // E5
+                setTimeout(() => this.playTone(783.99, 0.2), 200); // G5
+            },
+
+            playIncorrect() {
+                this.playTone(349.23, 0.1); // F4
+                setTimeout(() => this.playTone(293.66, 0.2), 100); // D4
+            },
+
+            playClick() {
+                this.playTone(800, 0.05, 'square');
+            },
+
+            playLevelUp() {
+                this.playTone(523.25, 0.1);
+                setTimeout(() => this.playTone(659.25, 0.1), 80);
+                setTimeout(() => this.playTone(783.99, 0.1), 160);
+                setTimeout(() => this.playTone(1046.50, 0.3), 240);
+            },
+
+            playAchievement() {
+                const notes = [523.25, 587.33, 659.25, 783.99, 880.00];
+                notes.forEach((note, i) => {
+                    setTimeout(() => this.playTone(note, 0.1), i * 60);
+                });
+            }
+        };
+
+        // Initialize sound on first user interaction
+        document.addEventListener('click', () => {
+            if (!SoundManager.context) {
+                SoundManager.init();
+            }
+        }, { once: true });
+
+        // Confetti effects
+        const triggerConfetti = () => {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#667eea', '#764ba2', '#4caf50', '#ff9800', '#f44336']
+            });
+        };
+
+        const triggerBigConfetti = () => {
+            const duration = 3000;
+            const end = Date.now() + duration;
+
+            const frame = () => {
+                confetti({
+                    particleCount: 7,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#667eea', '#764ba2', '#4caf50', '#ff9800']
+                });
+                confetti({
+                    particleCount: 7,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#667eea', '#764ba2', '#4caf50', '#ff9800']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            };
+            frame();
+        };
+
+        // Achievement system
+        const achievements = [
+            { id: 'first_correct', name: 'Eerste Goed!', icon: '🎯', description: 'Eerste vraag goed beantwoord' },
+            { id: 'perfect_level', name: 'Perfect Level', icon: '⭐', description: 'Alle vragen in een level goed' },
+            { id: 'streak_3', name: 'Op Dreef', icon: '🔥', description: '3 antwoorden op rij goed' },
+            { id: 'streak_5', name: 'Onverslaanbaar', icon: '💫', description: '5 antwoorden op rij goed' },
+            { id: 'completionist', name: 'Voltooier', icon: '🏆', description: 'Alle levels voltooid' }
+        ];
+
+        // Glossary data
+        const glossary = {
+            week1: [
+                { term: "Data", definition: "Ruwe feiten en cijfers zonder context. Bijvoorbeeld: '25', 'Amsterdam', '10-11-2025'." },
+                { term: "Informatie", definition: "Data met context en betekenis. Bijvoorbeeld: '25 jaar oud', 'Klant uit Amsterdam'." },
+                { term: "Kennis", definition: "Informatie die je kunt gebruiken voor beslissingen. Bijvoorbeeld: 'Jonge klanten kopen vooral op maandag'." },
+                { term: "DIKW-pyramide", definition: "Model dat de relatie laat zien tussen Data, Informatie, Kennis en Wijsheid (Wisdom)." },
+                { term: "Gestructureerde data", definition: "Data met een vaste structuur, opgeslagen in tabellen of databases. Bijvoorbeeld: Excel-bestanden, SQL-databases." },
+                { term: "Ongestructureerde data", definition: "Data in vrije vorm zonder vaste structuur. Bijvoorbeeld: e-mails, foto's, video's, sociale media posts." },
+                { term: "Stamgegevens", definition: "Relatief stabiele basisgegevens zoals klantnaam, adres (NAW), artikelcodes of IBAN's die weinig veranderen." },
+                { term: "Transactiedata", definition: "Data over concrete gebeurtenissen zoals bestellingen, factureren, betalingen. Verandert constant." },
+                { term: "CRM", definition: "Customer Relationship Management - systeem voor het beheren van klantgegevens en relaties." },
+                { term: "Datakwaliteit", definition: "De mate waarin data juist, volledig, actueel en consistent is." },
+                { term: "AVG", definition: "Algemene Verordening Gegevensbescherming - Europese wet voor privacybescherming." },
+                { term: "GDPR", definition: "General Data Protection Regulation - Engelse naam voor AVG." },
+                { term: "Dataminimalisatie", definition: "AVG-principe: verzamel alleen data die je echt nodig hebt voor het doel." },
+                { term: "Doelbinding", definition: "AVG-principe: gebruik persoonsgegevens alleen voor het doel waarvoor ze verzameld zijn." },
+                { term: "Integriteit en vertrouwelijkheid", definition: "AVG-principe: bescherm data tegen verlies, diefstal en misbruik met wachtwoorden en encryptie." },
+                { term: "Opslagbeperking", definition: "AVG-principe: bewaar data niet langer dan nodig voor het doel." },
+                { term: "Recht op vergetelheid", definition: "AVG-recht: personen kunnen vragen om hun gegevens te laten verwijderen." },
+                { term: "Recht op dataportabiliteit", definition: "AVG-recht: personen kunnen hun gegevens in een leesbaar formaat opvragen." },
+                { term: "Integer handelen", definition: "Eerlijk, ethisch en verantwoord omgaan met data volgens wettelijke en morele normen." },
+                { term: "Datalek", definition: "Ongeautoriseerde toegang tot of verlies van persoonsgegevens. Moet gemeld worden bij de toezichthouder." }
+            ],
+            week2: [
+                { term: "Order", definition: "Het eerste document in de verkoop datastroom: de klant bestelt producten of diensten." },
+                { term: "Orderbevestiging", definition: "Document waarin de verkoper bevestigt dat de order is ontvangen en verwerkt wordt." },
+                { term: "Pakbon", definition: "Document dat beschrijft welke producten er verzonden worden. Gaat mee met de zending." },
+                { term: "Factuur", definition: "Document waarmee betaling wordt gevraagd voor geleverde producten of diensten. Bevat BTW-nummer, factuurnummer, bedragen en BTW-specificatie." },
+                { term: "Factuurnummer", definition: "Uniek, opeenvolgend nummer op elke factuur. Wettelijk verplicht voor controleerbaarheid door Belastingdienst." },
+                { term: "BTW", definition: "Belasting over de Toegevoegde Waarde. In Nederland meestal 21% of 9% (verlaagd tarief)." },
+                { term: "Debiteur", definition: "Klant die jou geld schuldig is (openstaande factuur)." },
+                { term: "Crediteur", definition: "Leverancier aan wie jij geld schuldig bent." },
+                { term: "Debiteurenadministratie", definition: "Overzicht van alle openstaande facturen van klanten." },
+                { term: "Crediteurenadministratie", definition: "Overzicht van alle openstaande facturen die je moet betalen aan leveranciers." },
+                { term: "Creditfactuur", definition: "Factuur die een eerdere factuur corrigeert of terugdraait (stornering)." },
+                { term: "Betalingsherinnering", definition: "Vriendelijke brief waarin je een klant herinnert aan een openstaande factuur." },
+                { term: "Aanmaning", definition: "Formele brief waarin je betaling eist, vaak met extra kosten. Volgt na betalingsherinnering." },
+                { term: "Incasso", definition: "Proces waarbij een derde partij (incassobureau) openstaande facturen probeert te innen." },
+                { term: "Omzet", definition: "Totale bedrag dat je verdient met verkopen (exclusief of inclusief BTW)." },
+                { term: "Winst", definition: "Wat er overblijft van de omzet na aftrek van alle kosten (inkoop, personeel, huur, etc.)." }
+            ],
+            week3: [
+                { term: "Rapportage", definition: "Gestructureerd overzicht van data om inzicht te geven en beslissingen te ondersteunen." },
+                { term: "Verkooprapportage", definition: "Overzicht van verkochte producten, omzet per periode/product/klant." },
+                { term: "Voorraadrapportage", definition: "Overzicht van beschikbare producten, wat bijbesteld moet worden en verkoopsnelheid." },
+                { term: "Personeelsrapportage", definition: "Overzicht van gewerkte uren, verlof, ziekteverzuim per medewerker." },
+                { term: "Urenregistratie", definition: "Bijhouden hoeveel uur medewerkers werken per project of periode." },
+                { term: "Excel-functie: SOM", definition: "=SOM(bereik) - telt alle getallen in een bereik bij elkaar op. Bijvoorbeeld: =SOM(A1:A10)." },
+                { term: "Excel-functie: GEMIDDELDE", definition: "=GEMIDDELDE(bereik) - berekent het gemiddelde van getallen in een bereik." },
+                { term: "Excel-functie: AANTAL", definition: "=AANTAL(bereik) - telt hoeveel cellen met getallen er zijn in een bereik." },
+                { term: "Draaitabel", definition: "Pivot table - Excel tool om grote datasets snel te groeperen, filteren en samen te vatten." },
+                { term: "Staafdiagram", definition: "Grafiek voor het vergelijken van categorieën (bijvoorbeeld verkoop per product)." },
+                { term: "Lijndiagram", definition: "Grafiek voor het tonen van trends over tijd (bijvoorbeeld verkoop per maand)." },
+                { term: "Cirkeldiagram", definition: "Taartdiagram - toont verhoudingen binnen een geheel (bijvoorbeeld marktaandeel per product)." },
+                { term: "Spreidingsdiagram", definition: "Scatter plot - toont relatie tussen twee variabelen (bijvoorbeeld prijs vs. verkoop)." },
+                { term: "Trend", definition: "Patroon of ontwikkeling over tijd. Bijvoorbeeld: stijgende of dalende verkoop." },
+                { term: "Periode-vergelijking", definition: "Het vergelijken van data uit verschillende periodes (bijv. deze maand vs. vorige maand) om trends te zien." },
+                { term: "Filter", definition: "Selecteren van specifieke data uit een grotere dataset op basis van criteria." },
+                { term: "Groeperen", definition: "Data samenbrengen op basis van gemeenschappelijke kenmerken (bijv. per product, per maand)." },
+                { term: "Benchmarking", definition: "Vergelijken van prestaties met een standaard, concurrent of eerdere periode." }
+            ]
+        };
 
         // Game data
         const gameData = {
-            level1: {
-                title: "Level 1: Wat is Data?",
+            week1: {
+                level1: {
+                    title: "Level 1: Wat is Data?",
                 questions: [
                     {
                         id: 1,
@@ -484,11 +1365,37 @@
                         ],
                         categories: ["Data", "Informatie", "Kennis"],
                         explanation: "Data zijn ruwe feiten zonder context (zoals '25'). Informatie is data met context ('25 jaar oud'). Kennis is informatie die je kunt gebruiken voor beslissingen."
+                    },
+                    {
+                        id: 13,
+                        type: "multiple-choice",
+                        question: "Welke beschrijving past het best bij stamgegevens?",
+                        options: [
+                            "Gegevens over dagelijkse aankopen van klanten",
+                            "Basisgegevens over klanten, producten of medewerkers die weinig veranderen",
+                            "Gegevens die automatisch uit rapportages komen",
+                            "Notities uit gesprekken met klanten"
+                        ],
+                        correct: 1,
+                        explanation: "Stamgegevens zijn relatief stabiele basisgegevens zoals NAW, artikelcodes of IBAN's."
+                    },
+                    {
+                        id: 14,
+                        type: "scenario",
+                        question: "Je ziet in het CRM-systeem dat dezelfde klant twee keer voorkomt met verschillende adressen. Wat doe je?",
+                        options: [
+                            "Niets, duplicaten zijn geen probleem",
+                            "Verwijder willekeurig één record",
+                            "Controleer de bron, meld het bij de data-eigenaar en corrigeer pas na bevestiging",
+                            "Stuur de klant direct een e-mail om te vragen welk adres klopt"
+                        ],
+                        correct: 2,
+                        explanation: "Datakwaliteit houd je hoog door eerst de bron te controleren en de eigenaar te informeren voordat je aanpassingen doet."
                     }
                 ]
-            },
-            level2: {
-                title: "Level 2: Gestructureerde en Ongestructureerde Data",
+                },
+                level2: {
+                    title: "Level 2: Gestructureerde en Ongestructureerde Data",
                 questions: [
                     {
                         id: 4,
@@ -530,11 +1437,39 @@
                         ],
                         correct: 3,
                         explanation: "Ongeveer 80-90% van data binnen organisaties is ongestructureerd, zoals e-mails, foto's en documenten."
+                    },
+                    {
+                        id: 15,
+                        type: "matching",
+                        question: "Sleep de voorbeelden naar 'Stamgegevens' of 'Transactiedata'.",
+                        items: [
+                            { text: "Artikelnummer 4589", category: "Stamgegevens" },
+                            { text: "Bestelling #9832 van 15 april", category: "Transactiedata" },
+                            { text: "Adres van leverancier X", category: "Stamgegevens" },
+                            { text: "Factuurregel: 4 laptops verkocht", category: "Transactiedata" },
+                            { text: "IBAN van medewerker", category: "Stamgegevens" },
+                            { text: "Retourbon 2025-04-02", category: "Transactiedata" }
+                        ],
+                        categories: ["Stamgegevens", "Transactiedata"],
+                        explanation: "Stamgegevens veranderen weinig (bijv. artikelnummer), transactiedata beschrijven concrete gebeurtenissen."
+                    },
+                    {
+                        id: 16,
+                        type: "multiple-choice",
+                        question: "Welke actie verhoogt de datakwaliteit het meest?",
+                        options: [
+                            "Extra kolommen toevoegen zodat er altijd genoeg ruimte is",
+                            "Een import controleren met validatieregels en foutmeldingen terugmelden",
+                            "Alleen medewerkers laten invoeren zonder controles",
+                            "Dagelijks een kopie van het systeem maken"
+                        ],
+                        correct: 1,
+                        explanation: "Validatieregels voorkomen invoerfouten en sluiten nauw aan bij het leerdoel 'kwaliteitsgericht werken'."
                     }
                 ]
-            },
-            level3: {
-                title: "Level 3: AVG en Privacy",
+                },
+                level3: {
+                    title: "Level 3: AVG en Privacy",
                 questions: [
                     {
                         id: 7,
@@ -574,11 +1509,37 @@
                         ],
                         correct: 1,
                         explanation: "Je mag persoonsgegevens alleen gebruiken voor het doel waarvoor ze verzameld zijn. Dit is het principe van 'doelbinding'."
+                    },
+                    {
+                        id: 17,
+                        type: "multiple-choice",
+                        question: "Welke AVG-recht verplicht je om data van iemand te verwijderen als er geen grondslag meer is?",
+                        options: [
+                            "Recht op dataportabiliteit",
+                            "Recht op vergetelheid",
+                            "Recht op bezwaar",
+                            "Recht op beperking van verwerking"
+                        ],
+                        correct: 1,
+                        explanation: "Het recht op vergetelheid (wissing) betekent dat je gegevens moet verwijderen zodra de grondslag wegvalt."
+                    },
+                    {
+                        id: 18,
+                        type: "scenario",
+                        question: "Een collega meldt dat een USB-stick met klantgegevens is kwijtgeraakt. Wat is de juiste eerste stap?",
+                        options: [
+                            "Niets doen; het gebeurt vaker",
+                            "Alle klanten informeren via social media",
+                            "Direct melden bij de privacy officer/FG en de situatie vastleggen",
+                            "Een nieuwe USB-stick bestellen"
+                        ],
+                        correct: 2,
+                        explanation: "Een mogelijk datalek meld je onmiddellijk bij de verantwoordelijke (FG/privacy officer) zodat de AVG-procedure kan starten."
                     }
                 ]
-            },
-            level4: {
-                title: "Level 4: Integer Handelen",
+                },
+                level4: {
+                    title: "Level 4: Integer Handelen",
                 questions: [
                     {
                         id: 10,
@@ -619,9 +1580,629 @@
                         ],
                         correct: 2,
                         explanation: "Dit is een serieuze privacyschending. Het is belangrijk dit te melden bij je leidinggevende of privacyofficer."
+                    },
+                    {
+                        id: 19,
+                        type: "scenario",
+                        question: "Een manager vraagt je een rapport aan te passen zodat een slechte maand niet zichtbaar is. Wat doe je?",
+                        options: [
+                            "Je past het rapport aan, hij is je leidinggevende",
+                            "Je maakt twee versies en geeft alleen de beste door",
+                            "Je weigert, legt uit waarom dit niet integer is en meldt het bij je leidinggevende of vertrouwenspersoon",
+                            "Je verwijdert de hele dataset"
+                        ],
+                        correct: 2,
+                        explanation: "Integer handelen betekent dat cijfers eerlijk en volledig blijven, ook als ze tegenvallen."
+                    },
+                    {
+                        id: 20,
+                        type: "multiple-choice",
+                        question: "Welke maatregel hoort bij integer omgaan met toegangsrechten?",
+                        options: [
+                            "Accounts delen zodat iedereen overal in kan",
+                            "Toegang beperken tot wat iemand nodig heeft en logs periodiek controleren",
+                            "Iedereen standaard administrator maken",
+                            "Wachtwoorden op een whiteboard bijhouden"
+                        ],
+                        correct: 1,
+                        explanation: "Least privilege + logging voorkomt misbruik en sluit aan bij het AVG-principe 'integriteit en vertrouwelijkheid'."
                     }
                 ]
+                }
+            },
+            week2: {
+                level1: {
+                    title: "Level 1: Administratieve Documenten",
+                    questions: [
+                        {
+                            id: 21,
+                            type: "multiple-choice",
+                            question: "Wat is het eerste document in de datastroom van een verkoop?",
+                            options: [
+                                "Factuur",
+                                "Order",
+                                "Pakbon",
+                                "Orderbevestiging"
+                            ],
+                            correct: 1,
+                            explanation: "De order is het startpunt: de klant bestelt een product of dienst. Daarna volgen orderbevestiging, pakbon en factuur."
+                        },
+                        {
+                            id: 22,
+                            type: "matching",
+                            question: "Match de documenten met hun functie:",
+                            items: [
+                                { text: "Order", category: "Bestelling plaatsen" },
+                                { text: "Orderbevestiging", category: "Bevestigen dat bestelling is ontvangen" },
+                                { text: "Pakbon", category: "Beschrijven wat er verzonden wordt" },
+                                { text: "Factuur", category: "Betaling vragen voor producten/diensten" }
+                            ],
+                            categories: ["Bestelling plaatsen", "Bevestigen dat bestelling is ontvangen", "Beschrijven wat er verzonden wordt", "Betaling vragen voor producten/diensten"],
+                            explanation: "Elk document heeft een specifieke functie in de verkoopstroom: order (bestellen), orderbevestiging (bevestigen), pakbon (verzenden), factuur (betaling)."
+                        },
+                        {
+                            id: 23,
+                            type: "multiple-choice",
+                            question: "Welke informatie staat ALTIJD op een factuur?",
+                            options: [
+                                "Alleen het totaalbedrag",
+                                "BTW-nummer, factuurnummer, bedragen en BTW",
+                                "Alleen de naam van de klant",
+                                "De levertijd"
+                            ],
+                            correct: 1,
+                            explanation: "Een factuur moet wettelijk verplichte informatie bevatten: BTW-nummer, factuurnummer, datum, bedragen, BTW-specificatie en betalingsvoorwaarden."
+                        },
+                        {
+                            id: 24,
+                            type: "scenario",
+                            question: "Je ontvangt een order van een klant, maar er staat geen leveradres op. Wat doe je?",
+                            options: [
+                                "Verstuur de producten naar het factuuradres",
+                                "Neem contact op met de klant om het leveradres te vragen",
+                                "Wacht tot de klant zich meldt",
+                                "Annuleer de order"
+                            ],
+                            correct: 1,
+                            explanation: "Bij ontbrekende essentiële informatie moet je proactief contact opnemen met de klant. Dit voorkomt fouten en vertraging."
+                        },
+                        {
+                            id: 25,
+                            type: "multiple-choice",
+                            question: "Wat is het verschil tussen een pakbon en een factuur?",
+                            options: [
+                                "Er is geen verschil",
+                                "Een pakbon gaat mee met de zending, een factuur vraagt betaling",
+                                "Een pakbon is alleen voor interne administratie",
+                                "Een factuur bevat geen productomschrijving"
+                            ],
+                            correct: 1,
+                            explanation: "De pakbon beschrijft wat er verzonden wordt en gaat mee met de zending. De factuur vraagt betaling en wordt apart verstuurd."
+                        }
+                    ]
+                },
+                level2: {
+                    title: "Level 2: Datastroom Order tot Factuur",
+                    questions: [
+                        {
+                            id: 26,
+                            type: "drag-drop-classification",
+                            question: "Zet de documenten in de juiste volgorde van de verkoopstroom:",
+                            items: [
+                                { text: "1. Order ontvangen", category: "Stap 1" },
+                                { text: "2. Orderbevestiging versturen", category: "Stap 2" },
+                                { text: "3. Pakbon maken bij verzending", category: "Stap 3" },
+                                { text: "4. Factuur versturen", category: "Stap 4" }
+                            ],
+                            categories: ["Stap 1", "Stap 2", "Stap 3", "Stap 4"],
+                            explanation: "De standaard volgorde is: Order → Orderbevestiging → Pakbon → Factuur. Elke stap bouwt voort op de vorige."
+                        },
+                        {
+                            id: 27,
+                            type: "scenario",
+                            question: "Een klant belt dat het geleverde aantal niet klopt met de factuur. Welk document controleer je eerst?",
+                            options: [
+                                "De orderbevestiging",
+                                "De pakbon",
+                                "Het magazijnregistratiesysteem",
+                                "De offerte"
+                            ],
+                            correct: 1,
+                            explanation: "De pakbon beschrijft wat er daadwerkelijk verzonden is. Dit is het eerste document om te controleren bij afwijkingen."
+                        },
+                        {
+                            id: 28,
+                            type: "multiple-choice",
+                            question: "Waarom is het belangrijk dat factuurnummers opeenvolgend zijn?",
+                            options: [
+                                "Voor de klant om facturen te sorteren",
+                                "Voor de Belastingdienst en controleerbaarheid van de administratie",
+                                "Om dubbele facturen te voorkomen",
+                                "Het is niet belangrijk"
+                            ],
+                            correct: 1,
+                            explanation: "Opeenvolgende factuurnummers zijn wettelijk verplicht voor controleerbaarheid. Het voorkomt fraude en maakt controle door de Belastingdienst mogelijk."
+                        },
+                        {
+                            id: 29,
+                            type: "scenario",
+                            question: "Je merkt dat een factuur is verstuurd zonder dat de producten zijn verzonden. Wat doe je?",
+                            options: [
+                                "Niets, de klant betaalt toch wel",
+                                "Wacht tot de klant klaagt",
+                                "Storneer de factuur en verstuur een nieuwe na verzending",
+                                "Verstuur de producten zo snel mogelijk zonder melding"
+                            ],
+                            correct: 2,
+                            explanation: "Een factuur mag pas verstuurd worden na levering. Je moet de foutieve factuur storneren en de juiste procedure volgen."
+                        },
+                        {
+                            id: 30,
+                            type: "multiple-choice",
+                            question: "Wat is de relatie tussen stamgegevens en transactiedata in een factuur?",
+                            options: [
+                                "Er is geen relatie",
+                                "Stamgegevens (klantinfo, productinfo) worden gebruikt in transactiedata (factuurregels)",
+                                "Transactiedata bevat alleen totaalbedragen",
+                                "Stamgegevens veranderen bij elke transactie"
+                            ],
+                            correct: 1,
+                            explanation: "Stamgegevens zoals klantnaam, adres en productinformatie worden gebruikt in de transactiedata (factuurregels). Stamgegevens blijven stabiel, transacties zijn unieke gebeurtenissen."
+                        }
+                    ]
+                },
+                level3: {
+                    title: "Level 3: Financiële Dataverwerking",
+                    questions: [
+                        {
+                            id: 31,
+                            type: "multiple-choice",
+                            question: "Een product kost €100,- excl. BTW (21%). Wat is het bedrag incl. BTW?",
+                            options: [
+                                "€100,-",
+                                "€121,-",
+                                "€79,-",
+                                "€21,-"
+                            ],
+                            correct: 1,
+                            explanation: "€100 + (€100 × 0,21) = €121. Bij 21% BTW tel je 21% op bij het exclusief bedrag."
+                        },
+                        {
+                            id: 32,
+                            type: "scenario",
+                            question: "Je controleert een factuur en ziet dat het totaalbedrag niet klopt met de som van de regels. Wat doe je?",
+                            options: [
+                                "Verstuur de factuur toch, het verschil is klein",
+                                "Controleer de berekening, corrigeer de fout en meld dit bij je leidinggevende",
+                                "Vraag de klant om het verschil te accepteren",
+                                "Negeer het, de klant ziet het toch niet"
+                            ],
+                            correct: 1,
+                            explanation: "Financiële nauwkeurigheid is cruciaal. Fouten moeten altijd gecorrigeerd worden voordat een factuur wordt verstuurd."
+                        },
+                        {
+                            id: 33,
+                            type: "multiple-choice",
+                            question: "Wat betekent 'debiteuren' in de financiële administratie?",
+                            options: [
+                                "Bedrijven waar je geld aan moet betalen",
+                                "Klanten die jou geld schuldig zijn",
+                                "Medewerkers die salaris ontvangen",
+                                "Producten in voorraad"
+                            ],
+                            correct: 1,
+                            explanation: "Debiteuren zijn klanten die je geld schuldig zijn (openstaande facturen). Crediteuren zijn leveranciers die jij geld schuldig bent."
+                        },
+                        {
+                            id: 34,
+                            type: "matching",
+                            question: "Match de financiële termen met hun betekenis:",
+                            items: [
+                                { text: "Debiteur", category: "Klant die geld schuldig is" },
+                                { text: "Crediteur", category: "Leverancier die betaling krijgt" },
+                                { text: "BTW", category: "Belasting over toegevoegde waarde" },
+                                { text: "Creditfactuur", category: "Factuur die een eerdere factuur corrigeert" }
+                            ],
+                            categories: ["Klant die geld schuldig is", "Leverancier die betaling krijgt", "Belasting over toegevoegde waarde", "Factuur die een eerdere factuur corrigeert"],
+                            explanation: "Deze basistermen zijn essentieel in de financiële administratie en komen dagelijks voor in dataverwerking."
+                        },
+                        {
+                            id: 35,
+                            type: "scenario",
+                            question: "Een factuur van €500,- wordt na 2 maanden nog niet betaald. Wat is de juiste actie?",
+                            options: [
+                                "Direct een incassobureau inschakelen",
+                                "Verstuur een betalingsherinnering volgens het betalingsbeleid",
+                                "De klant blokkeren zonder melding",
+                                "Wachten tot de klant zelf contact opneemt"
+                            ],
+                            correct: 1,
+                            explanation: "Bij openstaande facturen volg je het betalingsbeleid: eerst een herinnering, dan aanmaning, en pas daarna verdere stappen."
+                        }
+                    ]
+                },
+                level4: {
+                    title: "Level 4: Financiële Rapportages",
+                    questions: [
+                        {
+                            id: 36,
+                            type: "multiple-choice",
+                            question: "Wat is het doel van een verkooprapportage?",
+                            options: [
+                                "Alleen het totaalbedrag tonen",
+                                "Inzicht geven in verkopen per product, periode of klant voor analyse en beslissingen",
+                                "Facturen versturen naar klanten",
+                                "Voorraad bijhouden"
+                            ],
+                            correct: 1,
+                            explanation: "Een verkooprapportage geeft management inzicht in prestaties, trends en helpt bij het nemen van beslissingen over inkoop, marketing en strategie."
+                        },
+                        {
+                            id: 37,
+                            type: "scenario",
+                            question: "Je maakt een overzicht van openstaande facturen. Welke data heb je minimaal nodig?",
+                            options: [
+                                "Alleen de totaalbedragen",
+                                "Klantnaam, factuurnummer, factuurdatum, vervaldatum en bedrag",
+                                "Alleen de factuurnummers",
+                                "Productomschrijvingen"
+                            ],
+                            correct: 1,
+                            explanation: "Voor een debiteurenadministratie heb je deze informatie nodig om te weten wie er moet betalen, hoeveel en of de betaling te laat is."
+                        },
+                        {
+                            id: 38,
+                            type: "multiple-choice",
+                            question: "Wat is het verschil tussen omzet en winst?",
+                            options: [
+                                "Er is geen verschil",
+                                "Omzet is totale verkoop, winst is omzet minus kosten",
+                                "Winst is altijd hoger dan omzet",
+                                "Omzet is alleen voor grote bedrijven"
+                            ],
+                            correct: 1,
+                            explanation: "Omzet is het totale bedrag dat je verdient met verkopen. Winst is wat er overblijft na aftrek van alle kosten (inkoop, personeel, huur, etc.)."
+                        },
+                        {
+                            id: 39,
+                            type: "drag-drop-classification",
+                            question: "Classificeer deze gegevens als Stamgegevens of Transactiedata:",
+                            items: [
+                                { text: "Klantnaam en adres", category: "Stamgegevens" },
+                                { text: "Factuur #2025-001 van €500", category: "Transactiedata" },
+                                { text: "Productcode en prijs", category: "Stamgegevens" },
+                                { text: "Betaling ontvangen op 15 maart", category: "Transactiedata" },
+                                { text: "BTW-nummer leverancier", category: "Stamgegevens" },
+                                { text: "Order geplaatst op 10 februari", category: "Transactiedata" }
+                            ],
+                            categories: ["Stamgegevens", "Transactiedata"],
+                            explanation: "Stamgegevens zijn stabiele basisgegevens (klant, product), transactiedata zijn specifieke gebeurtenissen (facturen, betalingen, orders)."
+                        },
+                        {
+                            id: 40,
+                            type: "scenario",
+                            question: "Een manager vraagt om een rapportage van alle verkopen van afgelopen maand. Welke stappen zet je?",
+                            options: [
+                                "Stuur direct alle facturen",
+                                "Filter facturen op datum, groepeer per product/klant, maak overzicht met totalen",
+                                "Wacht tot het kwartaal voorbij is",
+                                "Vraag de boekhouder om het te doen"
+                            ],
+                            correct: 1,
+                            explanation: "Voor een goede rapportage filter je de relevante data (periode), groepeer je logisch (per product/klant) en presenteer je overzichtelijk met totalen."
+                        }
+                    ]
+                }
+            },
+            week3: {
+                level1: {
+                    title: "Level 1: Soorten Rapportages",
+                    questions: [
+                        {
+                            id: 41,
+                            type: "multiple-choice",
+                            question: "Welk type rapportage geeft inzicht in het aantal producten op voorraad?",
+                            options: [
+                                "Verkooprapportage",
+                                "Personeelsrapportage",
+                                "Voorraadrapportage",
+                                "Financiële rapportage"
+                            ],
+                            correct: 2,
+                            explanation: "Een voorraadrapportage toont hoeveel producten er op voorraad zijn, wat besteld moet worden en welke artikelen snel of langzaam verkopen."
+                        },
+                        {
+                            id: 42,
+                            type: "matching",
+                            question: "Match het type rapportage met het doel:",
+                            items: [
+                                { text: "Verkooprapportage", category: "Inzicht in omzet en verkochte producten" },
+                                { text: "Voorraadrapportage", category: "Overzicht van beschikbare producten" },
+                                { text: "Urenregistratie", category: "Overzicht van gewerkte uren per medewerker" },
+                                { text: "Debiteuren overzicht", category: "Overzicht van openstaande facturen" }
+                            ],
+                            categories: ["Inzicht in omzet en verkochte producten", "Overzicht van beschikbare producten", "Overzicht van gewerkte uren per medewerker", "Overzicht van openstaande facturen"],
+                            explanation: "Elk type rapportage heeft een specifiek doel en helpt bij het nemen van beslissingen in verschillende bedrijfsprocessen."
+                        },
+                        {
+                            id: 43,
+                            type: "scenario",
+                            question: "De directie wil weten welke producten het meest verkocht worden. Welke rapportage maak je?",
+                            options: [
+                                "Voorraadrapportage",
+                                "Verkooprapportage gegroepeerd per product",
+                                "Personeelsrapportage",
+                                "Financiële jaaroverzicht"
+                            ],
+                            correct: 1,
+                            explanation: "Een verkooprapportage gegroepeerd per product laat zien welke producten populair zijn. Dit helpt bij inkoop- en marketingbeslissingen."
+                        },
+                        {
+                            id: 44,
+                            type: "multiple-choice",
+                            question: "Wat is het voordeel van een periodieke rapportage (bijv. maandelijks)?",
+                            options: [
+                                "Het kost minder tijd",
+                                "Je kunt trends en ontwikkelingen volgen en tijdig bijsturen",
+                                "Het is alleen voor grote bedrijven",
+                                "Er zijn geen voordelen"
+                            ],
+                            correct: 1,
+                            explanation: "Periodieke rapportages laten trends zien: stijgen of dalen verkopen? Is voorraad te hoog? Dit helpt bij tijdig bijsturen."
+                        },
+                        {
+                            id: 45,
+                            type: "scenarios-multiple",
+                            question: "Welke situaties vereisen DIRECT een rapportage? (Selecteer alle juiste antwoorden)",
+                            scenarios: [
+                                { text: "Voorraad van een product is bijna op", isWrong: true },
+                                { text: "Het is een mooie dag", isWrong: false },
+                                { text: "Veel facturen zijn al 60 dagen onbetaald", isWrong: true },
+                                { text: "De directie vraagt om verkoopcijfers", isWrong: true },
+                                { text: "Het is vrijdagmiddag", isWrong: false }
+                            ],
+                            explanation: "Rapportages zijn nodig bij lage voorraad, betalingsachterstanden of op verzoek van management. Dit zijn belangrijke signalen voor actie."
+                        }
+                    ]
+                },
+                level2: {
+                    title: "Level 2: Rapportages Maken",
+                    questions: [
+                        {
+                            id: 46,
+                            type: "multiple-choice",
+                            question: "Wat is de eerste stap bij het maken van een rapportage?",
+                            options: [
+                                "Direct een grafiek maken",
+                                "Bepalen wat het doel is en welke data je nodig hebt",
+                                "De rapportage printen",
+                                "Een titel bedenken"
+                            ],
+                            correct: 1,
+                            explanation: "Eerst bepaal je het doel (wat wil je weten?) en welke data je nodig hebt. Daarna verzamel, filter en presenteer je de data."
+                        },
+                        {
+                            id: 47,
+                            type: "drag-drop-classification",
+                            question: "Zet de stappen voor het maken van een rapportage in de juiste volgorde:",
+                            items: [
+                                { text: "1. Doel bepalen (wat moet de rapportage laten zien?)", category: "Stap 1" },
+                                { text: "2. Relevante data verzamelen", category: "Stap 2" },
+                                { text: "3. Data filteren en groeperen", category: "Stap 3" },
+                                { text: "4. Presenteren in tabel of grafiek", category: "Stap 4" }
+                            ],
+                            categories: ["Stap 1", "Stap 2", "Stap 3", "Stap 4"],
+                            explanation: "Een goede rapportage volgt deze logische stappen: doel → data verzamelen → filteren/groeperen → presenteren."
+                        },
+                        {
+                            id: 48,
+                            type: "scenario",
+                            question: "Je moet een verkooprapportage maken in Excel. Welke functie gebruik je om totalen te berekenen?",
+                            options: [
+                                "=GEMIDDELDE()",
+                                "=SOM()",
+                                "=AANTAL()",
+                                "=AFRONDEN()"
+                            ],
+                            correct: 1,
+                            explanation: "De functie =SOM() telt alle getallen bij elkaar op. Dit gebruik je voor totale verkopen, totale omzet, etc."
+                        },
+                        {
+                            id: 49,
+                            type: "multiple-choice",
+                            question: "Waarom is het belangrijk om een rapportage een duidelijke titel en datum te geven?",
+                            options: [
+                                "Het ziet er professioneler uit",
+                                "Zodat later duidelijk is waarover het rapport gaat en uit welke periode",
+                                "Het is niet belangrijk",
+                                "Alleen voor rapportages aan klanten"
+                            ],
+                            correct: 1,
+                            explanation: "Titel en datum zorgen ervoor dat iedereen weet waar het rapport over gaat en uit welke periode de data komt. Dit voorkomt verwarring."
+                        },
+                        {
+                            id: 50,
+                            type: "scenario",
+                            question: "Je maakt een rapport met verkopen per medewerker. Eén medewerker vraagt of je zijn lage cijfers kunt weglaten. Wat doe je?",
+                            options: [
+                                "Je laat de cijfers weg om de medewerker te helpen",
+                                "Je houdt alle data compleet en objectief in het rapport",
+                                "Je verhoogt de cijfers een beetje",
+                                "Je maakt twee versies van het rapport"
+                            ],
+                            correct: 1,
+                            explanation: "Rapportages moeten altijd volledig en eerlijk zijn. Data manipuleren is niet integer en verstoort besluitvorming."
+                        }
+                    ]
+                },
+                level3: {
+                    title: "Level 3: Draaitabellen & Grafieken",
+                    questions: [
+                        {
+                            id: 51,
+                            type: "multiple-choice",
+                            question: "Wat is het voordeel van een draaitabel (pivot table) in Excel?",
+                            options: [
+                                "Het maakt data mooier",
+                                "Je kunt grote datasets snel groeperen, filteren en samenvatten",
+                                "Het verwijdert automatisch fouten",
+                                "Het is alleen voor gevorderden"
+                            ],
+                            correct: 1,
+                            explanation: "Een draaitabel helpt om grote hoeveelheden data snel te analyseren door te groeperen (per maand, product, klant) en samen te vatten."
+                        },
+                        {
+                            id: 52,
+                            type: "matching",
+                            question: "Match het grafiektype met de beste toepassing:",
+                            items: [
+                                { text: "Staafdiagram", category: "Vergelijken van categorieën" },
+                                { text: "Lijndiagram", category: "Trends over tijd tonen" },
+                                { text: "Cirkeldiagram", category: "Verhoudingen binnen een geheel" },
+                                { text: "Spreidingsdiagram", category: "Relatie tussen twee variabelen" }
+                            ],
+                            categories: ["Vergelijken van categorieën", "Trends over tijd tonen", "Verhoudingen binnen een geheel", "Relatie tussen twee variabelen"],
+                            explanation: "Elk grafiektype heeft een specifiek doel: staafdiagram voor vergelijken, lijn voor trends, cirkel voor verhoudingen."
+                        },
+                        {
+                            id: 53,
+                            type: "scenario",
+                            question: "Je wilt de ontwikkeling van verkopen over 12 maanden laten zien. Welk grafiektype kies je?",
+                            options: [
+                                "Cirkeldiagram",
+                                "Lijndiagram",
+                                "Spreidingsdiagram",
+                                "Watervalgrafiek"
+                            ],
+                            correct: 1,
+                            explanation: "Een lijndiagram is perfect voor het tonen van trends over tijd. Je ziet direct of verkopen stijgen, dalen of stabiel blijven."
+                        },
+                        {
+                            id: 54,
+                            type: "multiple-choice",
+                            question: "Je maakt een grafiek van verkoopverdeling per productcategorie. Welk type is het meest geschikt?",
+                            options: [
+                                "Lijndiagram",
+                                "Spreidingsdiagram",
+                                "Cirkeldiagram of staafdiagram",
+                                "Histogram"
+                            ],
+                            correct: 2,
+                            explanation: "Een cirkeldiagram toont verhoudingen (hoeveel % per categorie). Een staafdiagram vergelijkt de absolute aantallen. Beide zijn geschikt."
+                        },
+                        {
+                            id: 55,
+                            type: "scenario",
+                            question: "Je presenteert een grafiek aan management. De grafiek is onduidelijk en de schaalverdeling klopt niet. Wat doe je?",
+                            options: [
+                                "Presenteer het toch, management let er niet op",
+                                "Verbeter de grafiek: duidelijke labels, juiste schaal, legende",
+                                "Gebruik alleen een tabel zonder grafiek",
+                                "Laat iemand anders de presentatie doen"
+                            ],
+                            correct: 1,
+                            explanation: "Een onduidelijke grafiek leidt tot verkeerde conclusies. Zorg altijd voor duidelijke labels, juiste schaalverdeling en een legende."
+                        }
+                    ]
+                },
+                level4: {
+                    title: "Level 4: Rapportages Analyseren",
+                    questions: [
+                        {
+                            id: 56,
+                            type: "scenario",
+                            question: "Een verkooprapportage toont dat Product A de afgelopen 3 maanden 40% minder verkoopt. Wat is de juiste vervolgactie?",
+                            options: [
+                                "Het product direct uit het assortiment halen",
+                                "Analyseren waarom (seizoen, concurrent, kwaliteit) en met management bespreken",
+                                "Niets doen, het komt vanzelf goed",
+                                "De prijs verdubbelen"
+                            ],
+                            correct: 1,
+                            explanation: "Een dalende trend vraagt om analyse: is het seizoensgebonden, heeft een concurrent een beter product, of is er iets anders aan de hand?"
+                        },
+                        {
+                            id: 57,
+                            type: "multiple-choice",
+                            question: "Wat betekent het als een debiteurenadministratie laat zien dat 30% van de facturen >60 dagen onbetaald is?",
+                            options: [
+                                "Dit is normaal en geen probleem",
+                                "Er is mogelijk een probleem met betalingsafspraken of creditwaardigheid van klanten",
+                                "De facturen zijn verloren",
+                                "Klanten betalen altijd te laat"
+                            ],
+                            correct: 1,
+                            explanation: "Veel te late betalingen kunnen wijzen op problemen met betalingsbeleid, slechte betalers of onduidelijke facturen. Dit vraagt actie."
+                        },
+                        {
+                            id: 58,
+                            type: "matching",
+                            question: "Match de bevinding in een rapportage met de mogelijke actie:",
+                            items: [
+                                { text: "Voorraad Product X is 0", category: "Bijbestellen bij leverancier" },
+                                { text: "Verkopen dalen 3 maanden op rij", category: "Oorzaak analyseren en marketingactie overwegen" },
+                                { text: "Medewerker heeft 200 overuren", category: "Gesprek planning en werkdruk" },
+                                { text: "10 facturen >90 dagen onbetaald", category: "Betalingsherinneringen versturen of incasso starten" }
+                            ],
+                            categories: ["Bijbestellen bij leverancier", "Oorzaak analyseren en marketingactie overwegen", "Gesprek planning en werkdruk", "Betalingsherinneringen versturen of incasso starten"],
+                            explanation: "Rapportages geven signalen. De kunst is om de juiste conclusie te trekken en passende actie te ondernemen."
+                        },
+                        {
+                            id: 59,
+                            type: "scenario",
+                            question: "Je ziet in een personeelsrapportage dat één medewerker structureel veel ziektedagen heeft. Wat doe je?",
+                            options: [
+                                "De medewerker ontslaan",
+                                "Het melden bij HR/leidinggevende voor een gesprek en ondersteuning",
+                                "Het negeren, iedereen wordt wel eens ziek",
+                                "De gegevens aanpassen zodat het niet opvalt"
+                            ],
+                            correct: 1,
+                            explanation: "Structureel hoog ziekteverzuim vraagt aandacht: is er een werkgerelateerd probleem? Heeft de medewerker hulp nodig? Meld dit bij HR."
+                        },
+                        {
+                            id: 60,
+                            type: "multiple-choice",
+                            question: "Waarom is het belangrijk om rapportages te vergelijken met eerdere periodes?",
+                            options: [
+                                "Om te zien of rapporten hetzelfde zijn",
+                                "Om trends, groei of daling te identificeren en tijdig bij te sturen",
+                                "Het is niet belangrijk",
+                                "Alleen voor de jaarrekening"
+                            ],
+                            correct: 1,
+                            explanation: "Door periodes te vergelijken zie je of zaken verbeteren of verslechteren. Dit helpt bij tijdig ingrijpen en het nemen van betere beslissingen."
+                        }
+                    ]
+                }
             }
+        };
+
+        // LocalStorage helpers
+        const saveTestResult = (week, score, maxScore, streak, achievements) => {
+            const history = JSON.parse(localStorage.getItem('dataDetectiveHistory') || '[]');
+            const result = {
+                week,
+                score,
+                maxScore,
+                percentage: Math.round((score / maxScore) * 100),
+                streak,
+                achievements: achievements.length,
+                date: new Date().toISOString(),
+                timestamp: Date.now()
+            };
+            history.unshift(result); // Add to beginning
+            // Keep only last 20 results
+            if (history.length > 20) history.pop();
+            localStorage.setItem('dataDetectiveHistory', JSON.stringify(history));
+        };
+
+        const getTestHistory = () => {
+            return JSON.parse(localStorage.getItem('dataDetectiveHistory') || '[]');
+        };
+
+        const clearTestHistory = () => {
+            localStorage.removeItem('dataDetectiveHistory');
         };
 
         function DataDetectiveGame() {
@@ -636,10 +2217,41 @@
             const [matchingAnswers, setMatchingAnswers] = useState({});
             const [multipleSelections, setMultipleSelections] = useState([]);
             const [selectedWeek, setSelectedWeek] = useState(1);
+            const [streak, setStreak] = useState(0);
+            const [bestStreak, setBestStreak] = useState(0);
+            const [unlockedAchievements, setUnlockedAchievements] = useState([]);
+            const [levelCorrectCount, setLevelCorrectCount] = useState(0);
+            const [theme, setTheme] = useState('light');
+            const [soundEnabled, setSoundEnabled] = useState(true);
+            const [shake, setShake] = useState(false);
+            const [testHistory, setTestHistory] = useState(getTestHistory());
+            const [glossaryOpen, setGlossaryOpen] = useState(false);
+            const questionCardRef = useRef(null);
 
-            const levels = [gameData.level1, gameData.level2, gameData.level3, gameData.level4];
+            useEffect(() => {
+                document.documentElement.setAttribute('data-theme', theme);
+            }, [theme]);
+
+            useEffect(() => {
+                SoundManager.enabled = soundEnabled;
+            }, [soundEnabled]);
+
+            const currentWeekData = gameData[`week${selectedWeek}`];
+            const levels = currentWeekData ? [currentWeekData.level1, currentWeekData.level2, currentWeekData.level3, currentWeekData.level4] : [];
             const totalQuestions = levels.reduce((sum, level) => sum + level.questions.length, 0);
-            const questionsAnswered = (currentLevel - 1) * 3 + currentQuestion;
+            const questionsBefore = levels.slice(0, currentLevel - 1).reduce(
+                (sum, level) => sum + level.questions.length,
+                0
+            );
+            const questionsAnswered = questionsBefore + currentQuestion;
+
+            const unlockAchievement = (achievementId) => {
+                if (!unlockedAchievements.includes(achievementId)) {
+                    setUnlockedAchievements([...unlockedAchievements, achievementId]);
+                    SoundManager.playAchievement();
+                    setTimeout(() => triggerConfetti(), 100);
+                }
+            };
 
             const getCurrentQuestion = () => {
                 const level = levels[currentLevel - 1];
@@ -647,16 +2259,22 @@
             };
 
             const handleStartGame = () => {
+                SoundManager.playClick();
                 setGameState('playing');
                 setCurrentLevel(1);
                 setCurrentQuestion(0);
                 setScore(0);
+                setStreak(0);
+                setBestStreak(0);
+                setLevelCorrectCount(0);
+                setUnlockedAchievements([]);
             };
 
             const handleAnswer = (answerIndex) => {
                 const question = getCurrentQuestion();
                 if (showFeedback || !question) return;
 
+                SoundManager.playClick();
                 setSelectedAnswer(answerIndex);
                 const correct = answerIndex === question.correct;
                 setIsCorrect(correct);
@@ -664,19 +2282,60 @@
 
                 if (correct) {
                     setScore(score + 10);
+                    const newStreak = streak + 1;
+                    setStreak(newStreak);
+                    setBestStreak(Math.max(bestStreak, newStreak));
+                    setLevelCorrectCount(levelCorrectCount + 1);
+
+                    SoundManager.playCorrect();
+                    triggerConfetti();
+
+                    // Check achievements
+                    if (score === 0 && questionsAnswered === 0) {
+                        unlockAchievement('first_correct');
+                    }
+                    if (newStreak === 3) {
+                        unlockAchievement('streak_3');
+                    }
+                    if (newStreak === 5) {
+                        unlockAchievement('streak_5');
+                    }
+                } else {
+                    setStreak(0);
+                    setShake(true);
+                    SoundManager.playIncorrect();
+                    setTimeout(() => setShake(false), 500);
                 }
             };
 
             const handleNext = () => {
+                SoundManager.playClick();
                 const level = levels[currentLevel - 1];
-                
+
                 if (currentQuestion < level.questions.length - 1) {
                     setCurrentQuestion(currentQuestion + 1);
                 } else if (currentLevel < levels.length) {
+                    // Check for perfect level
+                    if (levelCorrectCount === level.questions.length) {
+                        unlockAchievement('perfect_level');
+                    }
                     setCurrentLevel(currentLevel + 1);
                     setCurrentQuestion(0);
+                    setLevelCorrectCount(0);
+                    SoundManager.playLevelUp();
                 } else {
+                    // Check for perfect level on last level
+                    if (levelCorrectCount === level.questions.length) {
+                        unlockAchievement('perfect_level');
+                    }
+                    unlockAchievement('completionist');
+
+                    // Save test result to history
+                    saveTestResult(selectedWeek, score, totalQuestions * 10, bestStreak, unlockedAchievements);
+                    setTestHistory(getTestHistory());
+
                     setGameState('end');
+                    triggerBigConfetti();
                 }
 
                 setSelectedAnswer(null);
@@ -685,12 +2344,39 @@
                 setMultipleSelections([]);
             };
 
+            const handleBackToStart = () => {
+                if (window.confirm('Weet je zeker dat je de test wilt afbreken? Je voortgang gaat verloren.')) {
+                    SoundManager.playClick();
+                    setGameState('start');
+                    setCurrentLevel(1);
+                    setCurrentQuestion(0);
+                    setScore(0);
+                    setStreak(0);
+                    setBestStreak(0);
+                    setLevelCorrectCount(0);
+                    setUnlockedAchievements([]);
+                    setSelectedAnswer(null);
+                    setShowFeedback(false);
+                    setMatchingAnswers({});
+                    setMultipleSelections([]);
+                }
+            };
+
+            const handleClearHistory = () => {
+                if (window.confirm('Weet je zeker dat je alle testgeschiedenis wilt wissen? Dit kan niet ongedaan worden gemaakt.')) {
+                    SoundManager.playClick();
+                    clearTestHistory();
+                    setTestHistory([]);
+                }
+            };
+
             const handleDragStart = (item) => {
                 setDraggedItem(item);
             };
 
             const handleDrop = (category) => {
                 if (draggedItem) {
+                    SoundManager.playClick();
                     setMatchingAnswers({
                         ...matchingAnswers,
                         [draggedItem.text]: category
@@ -701,26 +2387,48 @@
 
             const handleCheckMatching = () => {
                 const question = getCurrentQuestion();
-                
-                // Check if all items are matched
+
                 if (Object.keys(matchingAnswers).length !== question.items.length) {
                     alert('Sleep alle items naar een categorie voordat je controleert!');
                     return;
                 }
-                
-                const allCorrect = question.items.every(item => 
+
+                const allCorrect = question.items.every(item =>
                     matchingAnswers[item.text] === item.category
                 );
-                
+
                 setIsCorrect(allCorrect);
                 setShowFeedback(true);
-                
+
                 if (allCorrect) {
                     setScore(score + 10);
+                    const newStreak = streak + 1;
+                    setStreak(newStreak);
+                    setBestStreak(Math.max(bestStreak, newStreak));
+                    setLevelCorrectCount(levelCorrectCount + 1);
+
+                    SoundManager.playCorrect();
+                    triggerConfetti();
+
+                    if (score === 0 && questionsAnswered === 0) {
+                        unlockAchievement('first_correct');
+                    }
+                    if (newStreak === 3) {
+                        unlockAchievement('streak_3');
+                    }
+                    if (newStreak === 5) {
+                        unlockAchievement('streak_5');
+                    }
+                } else {
+                    setStreak(0);
+                    setShake(true);
+                    SoundManager.playIncorrect();
+                    setTimeout(() => setShake(false), 500);
                 }
             };
 
             const handleMultipleSelection = (index) => {
+                SoundManager.playClick();
                 if (multipleSelections.includes(index)) {
                     setMultipleSelections(multipleSelections.filter(i => i !== index));
                 } else {
@@ -733,101 +2441,223 @@
                 const correctSelections = question.scenarios
                     .map((s, i) => s.isWrong ? i : -1)
                     .filter(i => i !== -1);
-                
+
                 const allCorrect = correctSelections.length === multipleSelections.length &&
                     correctSelections.every(i => multipleSelections.includes(i));
-                
+
                 setIsCorrect(allCorrect);
                 setShowFeedback(true);
-                
+
                 if (allCorrect) {
                     setScore(score + 10);
-                }
-            };
+                    const newStreak = streak + 1;
+                    setStreak(newStreak);
+                    setBestStreak(Math.max(bestStreak, newStreak));
+                    setLevelCorrectCount(levelCorrectCount + 1);
 
-            const handleClassification = (answerIndex) => {
-                const question = getCurrentQuestion();
-                if (showFeedback || !question) return;
+                    SoundManager.playCorrect();
+                    triggerConfetti();
 
-                // Add to multiple selections for classification
-                if (multipleSelections.includes(answerIndex)) {
-                    setMultipleSelections(multipleSelections.filter(i => i !== answerIndex));
+                    if (score === 0 && questionsAnswered === 0) {
+                        unlockAchievement('first_correct');
+                    }
+                    if (newStreak === 3) {
+                        unlockAchievement('streak_3');
+                    }
+                    if (newStreak === 5) {
+                        unlockAchievement('streak_5');
+                    }
                 } else {
-                    setMultipleSelections([...multipleSelections, answerIndex]);
+                    setStreak(0);
+                    setShake(true);
+                    SoundManager.playIncorrect();
+                    setTimeout(() => setShake(false), 500);
                 }
             };
 
-            const handleCheckClassification = () => {
-                const question = getCurrentQuestion();
-                
-                // Check if all items are classified
-                if (multipleSelections.length !== question.items.length) {
-                    alert('Classificeer alle items voordat je verder gaat!');
-                    return;
-                }
-                
-                setIsCorrect(true);
-                setShowFeedback(true);
-                setScore(score + 10);
+            const toggleTheme = () => {
+                SoundManager.playClick();
+                setTheme(theme === 'light' ? 'dark' : 'light');
             };
+
+            const toggleSound = () => {
+                const newState = !soundEnabled;
+                setSoundEnabled(newState);
+                if (newState && SoundManager.context) {
+                    SoundManager.playClick();
+                }
+            };
+
+            const toggleGlossary = () => {
+                SoundManager.playClick();
+                setGlossaryOpen(!glossaryOpen);
+            };
+
+            // Keyboard navigation
+            useEffect(() => {
+                const handleKeyPress = (e) => {
+                    if (gameState === 'playing' && !showFeedback) {
+                        const question = getCurrentQuestion();
+                        if (question && question.type === 'multiple-choice') {
+                            const key = parseInt(e.key);
+                            if (key >= 1 && key <= question.options.length) {
+                                handleAnswer(key - 1);
+                            }
+                        }
+                    } else if (showFeedback && e.key === 'Enter') {
+                        handleNext();
+                    }
+                };
+
+                window.addEventListener('keydown', handleKeyPress);
+                return () => window.removeEventListener('keydown', handleKeyPress);
+            }, [gameState, showFeedback, currentLevel, currentQuestion]);
 
             if (gameState === 'start') {
                 return (
+                    <>
                     <div className="game-container">
-                        <div className="version-info">v1.0</div>
+                        <div className="version-info">v2.0</div>
+                        <button
+                            className="theme-toggle"
+                            onClick={toggleTheme}
+                            aria-label="Toggle dark mode"
+                            title={theme === 'light' ? 'Schakel naar donkere modus' : 'Schakel naar lichte modus'}
+                        >
+                            {theme === 'light' ? '🌙' : '☀️'}
+                        </button>
+                        <button
+                            className={`sound-toggle ${!soundEnabled ? 'disabled' : ''}`}
+                            onClick={toggleSound}
+                            aria-label="Toggle sound effects"
+                            title={soundEnabled ? 'Geluid uitschakelen' : 'Geluid inschakelen'}
+                        >
+                            {soundEnabled ? '🔊' : '🔇'}
+                        </button>
                         <div className="logo-container">
                             <img src="da-vinci-college.webp" alt="Da Vinci College" />
                         </div>
-                        
+
                         <div className="start-screen">
                             <div className="header">
                                 <h1>🕵️ Data Detective 🕵️</h1>
                                 <p className="subtitle">Leer de basis van dataverwerking!</p>
                             </div>
-                            
+
                             <div className="emoji">🎮</div>
-                            
+
                             <p>Welkom bij Data Detective! In deze game leer je de basisprincipes van dataverwerking.</p>
-                            
+
                             <div className="week-selector">
                                 <h3>Selecteer een week:</h3>
                                 <div className="week-buttons">
-                                    <button 
+                                    <button
                                         className={`week-button ${selectedWeek === 1 ? 'selected' : ''}`}
-                                        onClick={() => setSelectedWeek(1)}
+                                        onClick={() => { setSelectedWeek(1); SoundManager.playClick(); }}
+                                        aria-pressed={selectedWeek === 1}
                                     >
                                         📚 Week 1<br/>
                                         <small>Beschikbaar</small>
                                     </button>
-                                    <button className="week-button" disabled>
-                                        🔒 Week 2<br/>
-                                        <small>Binnenkort</small>
+                                    <button
+                                        className={`week-button ${selectedWeek === 2 ? 'selected' : ''}`}
+                                        onClick={() => { setSelectedWeek(2); SoundManager.playClick(); }}
+                                        aria-pressed={selectedWeek === 2}
+                                    >
+                                        📘 Week 2<br/>
+                                        <small>Beschikbaar</small>
                                     </button>
-                                    <button className="week-button" disabled>
-                                        🔒 Week 3<br/>
-                                        <small>Binnenkort</small>
+                                    <button
+                                        className={`week-button ${selectedWeek === 3 ? 'selected' : ''}`}
+                                        onClick={() => { setSelectedWeek(3); SoundManager.playClick(); }}
+                                        aria-pressed={selectedWeek === 3}
+                                    >
+                                        📗 Week 3<br/>
+                                        <small>Beschikbaar</small>
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div className="level-list">
-                                <h3>Wat ga je leren in Week 1?</h3>
-                                <ul>
-                                    <li>📊 <strong>Level 1:</strong> Wat is data? (Data, Informatie, Kennis)</li>
-                                    <li>🗂️ <strong>Level 2:</strong> Gestructureerde en ongestructureerde data</li>
-                                    <li>🔒 <strong>Level 3:</strong> AVG en privacy principes</li>
-                                    <li>⚖️ <strong>Level 4:</strong> Integer en ethisch handelen</li>
-                                </ul>
+                                <h3>Wat ga je leren in Week {selectedWeek}?</h3>
+                                {selectedWeek === 1 && (
+                                    <ul>
+                                        <li>📊 <strong>Level 1:</strong> Wat is data? (Data, Informatie, Kennis)</li>
+                                        <li>🗂️ <strong>Level 2:</strong> Gestructureerde en ongestructureerde data</li>
+                                        <li>🔒 <strong>Level 3:</strong> AVG en privacy principes</li>
+                                        <li>⚖️ <strong>Level 4:</strong> Integer en ethisch handelen</li>
+                                    </ul>
+                                )}
+                                {selectedWeek === 2 && (
+                                    <ul>
+                                        <li>📄 <strong>Level 1:</strong> Administratieve documenten (order, pakbon, factuur)</li>
+                                        <li>🔄 <strong>Level 2:</strong> Datastroom van order tot factuur</li>
+                                        <li>💰 <strong>Level 3:</strong> Financiële dataverwerking en controles</li>
+                                        <li>📊 <strong>Level 4:</strong> Financiële rapportages en analyses</li>
+                                    </ul>
+                                )}
+                                {selectedWeek === 3 && (
+                                    <ul>
+                                        <li>📈 <strong>Level 1:</strong> Soorten rapportages (verkoop, voorraad, personeel)</li>
+                                        <li>🛠️ <strong>Level 2:</strong> Rapportages maken in Excel</li>
+                                        <li>📊 <strong>Level 3:</strong> Draaitabellen en grafieken</li>
+                                        <li>🔍 <strong>Level 4:</strong> Rapportages analyseren en interpreteren</li>
+                                    </ul>
+                                )}
                             </div>
 
                             <p>Elke vraag die je goed beantwoordt levert punten op. Veel succes!</p>
-                            
+
+                            {testHistory.length > 0 && (
+                                <div className="test-history">
+                                    <h3>📊 Test Geschiedenis</h3>
+                                    <div className="history-grid">
+                                        {testHistory.slice(0, 6).map((result, index) => {
+                                            const date = new Date(result.date);
+                                            const dateStr = date.toLocaleDateString('nl-NL', {
+                                                day: '2-digit',
+                                                month: '2-digit',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            });
+
+                                            return (
+                                                <div key={index} className="history-item">
+                                                    <div className="week-badge">Week {result.week}</div>
+                                                    <div className="score-big">{result.percentage}%</div>
+                                                    <div style={{ color: 'var(--text-secondary)' }}>
+                                                        {result.score} / {result.maxScore} punten
+                                                    </div>
+                                                    <div className="stats">
+                                                        <div className="stat">
+                                                            <span>🔥</span>
+                                                            <span>{result.streak}</span>
+                                                        </div>
+                                                        <div className="stat">
+                                                            <span>🏆</span>
+                                                            <span>{result.achievements}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="date">{dateStr}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <button className="clear-history" onClick={handleClearHistory}>
+                                            🗑️ Wis Geschiedenis
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="action-buttons">
                                 <button className="btn btn-primary" onClick={handleStartGame}>
                                     Start het Spel! 🚀
                                 </button>
                             </div>
-                            
+
                             <div className="footer">
                                 <strong>Data Detective - Week {selectedWeek}</strong><br/>
                                 Gemaakt door Tom Jongens, 17-11-2025<br/>
@@ -835,6 +2665,61 @@
                             </div>
                         </div>
                     </div>
+
+                    {/* Glossary toggle button */}
+                    <button className="glossary-toggle" onClick={toggleGlossary} title="Begrippenlijst openen">
+                        📚 Begrippenlijst
+                    </button>
+
+                    {/* Glossary overlay */}
+                    <div className={`glossary-overlay ${glossaryOpen ? 'visible' : ''}`} onClick={toggleGlossary}></div>
+
+                    {/* Glossary panel */}
+                    <div className={`glossary-panel ${glossaryOpen ? 'open' : ''}`}>
+                        <button className="glossary-close" onClick={toggleGlossary} aria-label="Sluiten">
+                            ×
+                        </button>
+
+                        <h2>📚 Begrippenlijst</h2>
+                        <p className="subtitle">Alle belangrijke begrippen uit Dataverwerking</p>
+
+                        <div className="glossary-section">
+                            <h3>Week 1: Basisprincipes</h3>
+                            <dl>
+                                {glossary.week1.map((item, index) => (
+                                    <div key={index} className="glossary-term">
+                                        <dt>{item.term}</dt>
+                                        <dd>{item.definition}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </div>
+
+                        <div className="glossary-section">
+                            <h3>Week 2: Documenten & Financiën</h3>
+                            <dl>
+                                {glossary.week2.map((item, index) => (
+                                    <div key={index} className="glossary-term">
+                                        <dt>{item.term}</dt>
+                                        <dd>{item.definition}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </div>
+
+                        <div className="glossary-section">
+                            <h3>Week 3: Rapportages & Analyse</h3>
+                            <dl>
+                                {glossary.week3.map((item, index) => (
+                                    <div key={index} className="glossary-term">
+                                        <dt>{item.term}</dt>
+                                        <dd>{item.definition}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </div>
+                    </div>
+                    </>
                 );
             }
 
@@ -842,7 +2727,7 @@
                 const percentage = Math.round((score / (totalQuestions * 10)) * 100);
                 let message = "";
                 let emoji = "";
-                
+
                 if (percentage >= 80) {
                     message = "Geweldig! Je bent een echte Data Detective!";
                     emoji = "🏆";
@@ -855,26 +2740,60 @@
                 }
 
                 return (
+                    <>
                     <div className="game-container">
-                        <div className="version-info">v1.0</div>
+                        <div className="version-info">v2.0</div>
+                        <button
+                            className="theme-toggle"
+                            onClick={toggleTheme}
+                            aria-label="Toggle dark mode"
+                        >
+                            {theme === 'light' ? '🌙' : '☀️'}
+                        </button>
+                        <button
+                            className={`sound-toggle ${!soundEnabled ? 'disabled' : ''}`}
+                            onClick={toggleSound}
+                            aria-label="Toggle sound effects"
+                        >
+                            {soundEnabled ? '🔊' : '🔇'}
+                        </button>
                         <div className="logo-container">
                             <img src="da-vinci-college.webp" alt="Da Vinci College" />
                         </div>
-                        
+
                         <div className="end-screen">
                             <div className="emoji">{emoji}</div>
                             <h2>Spel Voltooid!</h2>
                             <div className="score-display">
                                 Je score: {score} / {totalQuestions * 10} ({percentage}%)
                             </div>
+                            <div className="score-display" style={{ fontSize: '1.2em' }}>
+                                🔥 Beste streak: {bestStreak} op rij!
+                            </div>
                             <p>{message}</p>
-                            
+
+                            {unlockedAchievements.length > 0 && (
+                                <div>
+                                    <h3 style={{ color: 'var(--primary-color)', marginTop: '30px', marginBottom: '15px' }}>
+                                        🏆 Behaalde Achievements
+                                    </h3>
+                                    <div className="achievements-bar">
+                                        {achievements.filter(a => unlockedAchievements.includes(a.id)).map(achievement => (
+                                            <div key={achievement.id} className="achievement unlocked" title={achievement.description}>
+                                                <span>{achievement.icon}</span>
+                                                <span>{achievement.name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="action-buttons">
                                 <button className="btn btn-primary" onClick={handleStartGame}>
                                     Speel Opnieuw 🔄
                                 </button>
                             </div>
-                            
+
                             <div className="footer">
                                 <strong>Data Detective - Week {selectedWeek}</strong><br/>
                                 Gemaakt door Tom Jongens, 17-11-2025<br/>
@@ -882,6 +2801,61 @@
                             </div>
                         </div>
                     </div>
+
+                    {/* Glossary toggle button */}
+                    <button className="glossary-toggle" onClick={toggleGlossary} title="Begrippenlijst openen">
+                        📚 Begrippenlijst
+                    </button>
+
+                    {/* Glossary overlay */}
+                    <div className={`glossary-overlay ${glossaryOpen ? 'visible' : ''}`} onClick={toggleGlossary}></div>
+
+                    {/* Glossary panel */}
+                    <div className={`glossary-panel ${glossaryOpen ? 'open' : ''}`}>
+                        <button className="glossary-close" onClick={toggleGlossary} aria-label="Sluiten">
+                            ×
+                        </button>
+
+                        <h2>📚 Begrippenlijst</h2>
+                        <p className="subtitle">Alle belangrijke begrippen uit Dataverwerking</p>
+
+                        <div className="glossary-section">
+                            <h3>Week 1: Basisprincipes</h3>
+                            <dl>
+                                {glossary.week1.map((item, index) => (
+                                    <div key={index} className="glossary-term">
+                                        <dt>{item.term}</dt>
+                                        <dd>{item.definition}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </div>
+
+                        <div className="glossary-section">
+                            <h3>Week 2: Documenten & Financiën</h3>
+                            <dl>
+                                {glossary.week2.map((item, index) => (
+                                    <div key={index} className="glossary-term">
+                                        <dt>{item.term}</dt>
+                                        <dd>{item.definition}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </div>
+
+                        <div className="glossary-section">
+                            <h3>Week 3: Rapportages & Analyse</h3>
+                            <dl>
+                                {glossary.week3.map((item, index) => (
+                                    <div key={index} className="glossary-term">
+                                        <dt>{item.term}</dt>
+                                        <dd>{item.definition}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </div>
+                    </div>
+                    </>
                 );
             }
 
@@ -891,76 +2865,91 @@
             if (!question) return null;
 
             return (
+                <>
                 <div className="game-container">
-                    <div className="version-info">v1.0</div>
+                    <button
+                        className="back-to-start"
+                        onClick={handleBackToStart}
+                        aria-label="Terug naar start"
+                        title="Test afbreken en terug naar startscherm"
+                    >
+                        ← Terug naar Start
+                    </button>
+                    <button
+                        className="theme-toggle"
+                        onClick={toggleTheme}
+                        aria-label="Toggle dark mode"
+                    >
+                        {theme === 'light' ? '🌙' : '☀️'}
+                    </button>
+                    <button
+                        className={`sound-toggle ${!soundEnabled ? 'disabled' : ''}`}
+                        onClick={toggleSound}
+                        aria-label="Toggle sound effects"
+                    >
+                        {soundEnabled ? '🔊' : '🔇'}
+                    </button>
                     <div className="logo-container">
                         <img src="da-vinci-college.webp" alt="Da Vinci College" />
                     </div>
-                    
+                    {streak > 0 && (
+                        <div className="streak-badge" aria-live="polite">
+                            🔥 {streak} op rij!
+                        </div>
+                    )}
+
                     <div className="header">
                         <h1>🕵️ Data Detective</h1>
                     </div>
 
-                    <div className="progress-bar">
+                    <div className="progress-bar" role="progressbar" aria-valuenow={questionsAnswered} aria-valuemin="0" aria-valuemax={totalQuestions}>
                         <div className="progress-fill" style={{ width: `${(questionsAnswered / totalQuestions) * 100}%` }}>
                             {questionsAnswered} / {totalQuestions}
                         </div>
                     </div>
 
-                    <div className="score-display">Score: {score} punten</div>
+                    <div className="score-display" aria-live="polite">Score: {score} punten</div>
+
+                    {unlockedAchievements.length > 0 && (
+                        <div className="achievements-bar">
+                            {achievements.filter(a => unlockedAchievements.includes(a.id)).map(achievement => (
+                                <div key={achievement.id} className="achievement unlocked" title={achievement.description}>
+                                    <span>{achievement.icon}</span>
+                                    <span>{achievement.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     <div className="level-indicator">{level.title}</div>
 
-                    <div className="question-card">
+                    <div className={`question-card ${shake ? 'shake' : ''}`} ref={questionCardRef}>
                         <div className="question-text">{question.question}</div>
-
                         {question.type === 'multiple-choice' && (
-                            <div className="options">
-                                {question.options.map((option, index) => (
-                                    <button
-                                        key={index}
-                                        className={`option-button ${
-                                            selectedAnswer === index
-                                                ? isCorrect
-                                                    ? 'correct'
-                                                    : 'incorrect'
-                                                : showFeedback && index === question.correct
-                                                ? 'correct'
-                                                : ''
-                                        }`}
-                                        onClick={() => handleAnswer(index)}
-                                        disabled={showFeedback}
-                                    >
-                                        {option}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
-                        {question.type === 'classification' && (
                             <>
-                                <div className="options">
-                                    {question.items.map((item, index) => (
+                                <p className="sr-only">Gebruik toetsen 1-{question.options.length} om een antwoord te selecteren</p>
+                                <div className="options" role="radiogroup">
+                                    {question.options.map((option, index) => (
                                         <button
                                             key={index}
+                                            role="radio"
+                                            aria-checked={selectedAnswer === index}
                                             className={`option-button ${
-                                                multipleSelections.includes(index) ? 'selected' : ''
+                                                selectedAnswer === index
+                                                    ? isCorrect
+                                                        ? 'correct'
+                                                        : 'incorrect'
+                                                    : showFeedback && index === question.correct
+                                                    ? 'correct'
+                                                    : ''
                                             }`}
-                                            onClick={() => handleClassification(index)}
+                                            onClick={() => handleAnswer(index)}
                                             disabled={showFeedback}
                                         >
-                                            {item.text} → {item.type}
+                                            <span aria-hidden="true">{index + 1}. </span>{option}
                                         </button>
                                     ))}
                                 </div>
-
-                                {!showFeedback && multipleSelections.length === question.items.length && (
-                                    <div className="action-buttons">
-                                        <button className="btn btn-primary" onClick={handleCheckClassification}>
-                                            Controleer Antwoorden
-                                        </button>
-                                    </div>
-                                )}
                             </>
                         )}
 
@@ -977,6 +2966,9 @@
                                                     className="draggable-item"
                                                     draggable
                                                     onDragStart={() => handleDragStart(item)}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    aria-label={`Sleep ${item.text}`}
                                                 >
                                                     {item.text}
                                                 </div>
@@ -991,6 +2983,8 @@
                                             className="drop-zone"
                                             onDragOver={(e) => e.preventDefault()}
                                             onDrop={() => handleDrop(category)}
+                                            role="region"
+                                            aria-label={`Drop zone voor ${category}`}
                                         >
                                             <h4>{category}</h4>
                                             {Object.entries(matchingAnswers)
@@ -1027,6 +3021,9 @@
                                                     className="draggable-item"
                                                     draggable
                                                     onDragStart={() => handleDragStart(item)}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    aria-label={`Sleep ${item.text}`}
                                                 >
                                                     {item.text}
                                                 </div>
@@ -1041,6 +3038,8 @@
                                             className="drop-zone"
                                             onDragOver={(e) => e.preventDefault()}
                                             onDrop={() => handleDrop(category)}
+                                            role="region"
+                                            aria-label={`Drop zone voor ${category}`}
                                         >
                                             <h4>{category}</h4>
                                             {Object.entries(matchingAnswers)
@@ -1085,6 +3084,7 @@
                                             }`}
                                             onClick={() => handleMultipleSelection(index)}
                                             disabled={showFeedback}
+                                            aria-pressed={multipleSelections.includes(index)}
                                         >
                                             {scenario.text}
                                         </button>
@@ -1125,7 +3125,7 @@
                         )}
 
                         {showFeedback && question.explanation && (
-                            <div className={`feedback ${isCorrect ? 'correct' : 'incorrect'}`}>
+                            <div className={`feedback ${isCorrect ? 'correct' : 'incorrect'}`} role="alert" aria-live="assertive">
                                 <strong>{isCorrect ? '✅ Correct!' : '❌ Helaas, dat is niet juist.'}</strong>
                                 <p>{question.explanation}</p>
                             </div>
@@ -1142,6 +3142,61 @@
                         )}
                     </div>
                 </div>
+
+                {/* Glossary toggle button */}
+                <button className="glossary-toggle" onClick={toggleGlossary} title="Begrippenlijst openen">
+                    📚 Begrippenlijst
+                </button>
+
+                {/* Glossary overlay */}
+                <div className={`glossary-overlay ${glossaryOpen ? 'visible' : ''}`} onClick={toggleGlossary}></div>
+
+                {/* Glossary panel */}
+                <div className={`glossary-panel ${glossaryOpen ? 'open' : ''}`}>
+                    <button className="glossary-close" onClick={toggleGlossary} aria-label="Sluiten">
+                        ×
+                    </button>
+
+                    <h2>📚 Begrippenlijst</h2>
+                    <p className="subtitle">Alle belangrijke begrippen uit Dataverwerking</p>
+
+                    <div className="glossary-section">
+                        <h3>Week 1: Basisprincipes</h3>
+                        <dl>
+                            {glossary.week1.map((item, index) => (
+                                <div key={index} className="glossary-term">
+                                    <dt>{item.term}</dt>
+                                    <dd>{item.definition}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </div>
+
+                    <div className="glossary-section">
+                        <h3>Week 2: Documenten & Financiën</h3>
+                        <dl>
+                            {glossary.week2.map((item, index) => (
+                                <div key={index} className="glossary-term">
+                                    <dt>{item.term}</dt>
+                                    <dd>{item.definition}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </div>
+
+                    <div className="glossary-section">
+                        <h3>Week 3: Rapportages & Analyse</h3>
+                        <dl>
+                            {glossary.week3.map((item, index) => (
+                                <div key={index} className="glossary-term">
+                                    <dt>{item.term}</dt>
+                                    <dd>{item.definition}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </div>
+                </div>
+            </>
             );
         }
 
