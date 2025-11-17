@@ -9,42 +9,46 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
         :root {
-            --primary-color: #667eea;
-            --secondary-color: #764ba2;
-            --success-color: #4caf50;
-            --error-color: #f44336;
-            --warning-color: #ff9800;
-            --bg-start: #667eea;
-            --bg-end: #764ba2;
-            --text-primary: #333;
-            --text-secondary: #666;
-            --text-muted: #999;
-            --card-bg: white;
-            --card-secondary: #f8f9fa;
-            --border-color: #e0e0e0;
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.2);
-            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.3);
+            --primary-color: #00a894;
+            --secondary-color: #2fbfa8;
+            --accent-color: #7fd7c4;
+            --success-color: #3fab71;
+            --error-color: #e04b4b;
+            --warning-color: #f4af3d;
+            --bg-start: #e9f8f4;
+            --bg-end: #d7eefb;
+            --text-primary: #16413f;
+            --text-secondary: #3f5a59;
+            --text-muted: #6f8c8a;
+            --card-bg: #ffffff;
+            --card-secondary: #f1fbf8;
+            --border-color: #c1e2d8;
+            --shadow-sm: 0 2px 8px rgba(0, 122, 102, 0.1);
+            --shadow-md: 0 8px 24px rgba(0, 122, 102, 0.18);
+            --shadow-lg: 0 25px 60px rgba(0, 122, 102, 0.25);
             --transition-fast: 0.2s ease;
             --transition-normal: 0.3s ease;
             --transition-slow: 0.5s ease;
         }
 
         [data-theme="dark"] {
-            --primary-color: #8b9fea;
-            --secondary-color: #9370ba;
-            --success-color: #66bb6a;
-            --error-color: #ef5350;
-            --warning-color: #ffa726;
-            --bg-start: #1a1a2e;
-            --bg-end: #16213e;
-            --text-primary: #e0e0e0;
-            --text-secondary: #b0b0b0;
-            --text-muted: #808080;
-            --card-bg: #2d2d44;
-            --card-secondary: #252538;
-            --border-color: #3d3d5c;
+            --primary-color: #4fd1c5;
+            --secondary-color: #38a199;
+            --accent-color: #8be1d7;
+            --success-color: #6fd192;
+            --error-color: #ff8272;
+            --warning-color: #ffca6f;
+            --bg-start: #0f2e33;
+            --bg-end: #0c1f25;
+            --text-primary: #e3f5f3;
+            --text-secondary: #bcd2cf;
+            --text-muted: #8aa8a5;
+            --card-bg: #10292a;
+            --card-secondary: #123233;
+            --border-color: #224443;
             --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
             --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.5);
             --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.6);
@@ -57,14 +61,25 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(0, 168, 148, 0.25), transparent 55%),
+                radial-gradient(circle at 85% 0%, rgba(47, 191, 168, 0.25), transparent 50%),
+                radial-gradient(circle at 95% 60%, rgba(127, 215, 196, 0.35), transparent 45%),
+                linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
             transition: background var(--transition-slow);
+        }
+
+        html[data-theme="dark"] body {
+            background:
+                radial-gradient(circle at 10% 20%, rgba(79, 209, 197, 0.2), transparent 45%),
+                radial-gradient(circle at 85% 5%, rgba(56, 161, 153, 0.25), transparent 40%),
+                linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
         }
 
         #root {
@@ -74,12 +89,13 @@
 
         .game-container {
             background: var(--card-bg);
-            border-radius: 20px;
+            border-radius: 28px;
             box-shadow: var(--shadow-lg);
             padding: 40px;
+            border: 3px solid rgba(0, 168, 148, 0.15);
             animation: fadeInScale 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             position: relative;
-            transition: background var(--transition-normal), box-shadow var(--transition-normal);
+            transition: background var(--transition-normal), box-shadow var(--transition-normal), border-color var(--transition-normal);
         }
 
         .theme-toggle {
